@@ -2,14 +2,14 @@ from __future__ import annotations
 
 from fastapi import HTTPException, Request, status
 
+from helix.config import settings
+
 
 async def verify_api_key(request: Request) -> str:
     """
     Middleware-style dependency. Returns client_id if auth passes.
     If auth_enabled=False in settings, always passes through.
     """
-    from helix.config import settings
-
     if not settings.auth_enabled:
         return request.headers.get("X-Client-ID", "anonymous")
 

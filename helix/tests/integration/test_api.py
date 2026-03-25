@@ -126,7 +126,7 @@ async def test_auth_disabled_allows_any_request(client):
 
 
 async def test_auth_enabled_rejects_missing_key(app):
-    with patch("helix.config.settings") as mock_settings:
+    with patch("helix.gateway.auth.settings") as mock_settings:
         mock_settings.auth_enabled = True
         mock_settings.api_keys = ["valid-key-123"]
         mock_settings.rate_limit_enabled = False
@@ -141,7 +141,7 @@ async def test_auth_enabled_rejects_missing_key(app):
 
 
 async def test_auth_enabled_accepts_valid_key(app):
-    with patch("helix.config.settings") as mock_settings:
+    with patch("helix.gateway.auth.settings") as mock_settings:
         mock_settings.auth_enabled = True
         mock_settings.api_keys = ["valid-key-123"]
         mock_settings.rate_limit_enabled = False
@@ -161,7 +161,7 @@ async def test_auth_enabled_accepts_valid_key(app):
 async def test_rate_limit_triggers_429(app):
     with patch("helix.gateway.rate_limiter._limiter") as mock_limiter:
         mock_limiter.is_allowed.return_value = False
-        with patch("helix.config.settings") as mock_settings:
+        with patch("helix.gateway.rate_limiter.settings") as mock_settings:
             mock_settings.rate_limit_enabled = True
             mock_settings.auth_enabled = False
             async with AsyncClient(

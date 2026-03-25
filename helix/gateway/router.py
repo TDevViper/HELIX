@@ -5,15 +5,17 @@ import time
 from typing import AsyncIterator
 
 import orjson
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
+from helix.gateway.auth import verify_api_key
+from helix.gateway.rate_limiter import rate_limit
 from helix.models.request import HelixRequest, Message, Priority, UserTier
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(verify_api_key), Depends(rate_limit)])
 
 
 # ── Request / Response schemas (OpenAI-compatible) ────────────
@@ -24,10 +26,9 @@ class ChatCompletionRequest(BaseModel):
     max_tokens: int = 512
     temperature: float = 0.7
     stream: bool = True
-    # Helix extensions (optional — ignored by standard OpenAI clients)
     session_id: str | None = None
-    priority: str | None = None        # "low" | "normal" | "high" | "critical"
-    user_tier: str | None = None       # "free" | "standard" | "premium"
+    priority: str | None = None
+    user_tier: str | None = None
     deadline_seconds: float | None = None
 
 
@@ -35,7 +36,6 @@ def _build_helix_request(
     body: ChatCompletionRequest,
     client_id: str,
 ) -> HelixRequest:
-    """Convert OpenAI-style request body into a HelixRequest."""
     messages = [
         Message(role=m["role"], content=m["content"])
         for m in body.messages
@@ -74,7 +74,6 @@ def _build_helix_request(
 
 
 def _sse_chunk(content: str, model: str) -> bytes:
-    """Format a token as an OpenAI-compatible SSE data chunk."""
     chunk = {
         "object": "chat.completion.chunk",
         "model": model,
@@ -90,7 +89,6 @@ def _sse_chunk(content: str, model: str) -> bytes:
 
 
 def _sse_done() -> bytes:
-    """SSE stream terminator."""
     return b"data: [DONE]\n\n"
 
 
@@ -99,18 +97,12 @@ async def _stream_response(
     pool: object,
     model: str,
 ) -> AsyncIterator[bytes]:
-    """
-    Pull tokens from the worker pool and yield SSE-formatted bytes.
-    Sends [DONE] sentinel at the end.
-    """
     try:
-        async for token in pool.generate(request):  # type: ignore[attr-defined]
+        async for token in pool.generate(request):
             yield _sse_chunk(token, model)
         yield _sse_done()
     except Exception as exc:
-        logger.error(
-            "Stream error for request %s: %s", request.request_id, exc
-        )
+        logger.error("Stream error for request %s: %s", request.request_id, exc)
         error_chunk = orjson.dumps({"error": str(exc)})
         yield b"data: " + error_chunk + b"\n\n"
         yield _sse_done()
@@ -123,10 +115,6 @@ async def chat_completions(
     body: ChatCompletionRequest,
     request: Request,
 ) -> StreamingResponse:
-    """
-    OpenAI-compatible chat completions endpoint.
-    Always streams — non-streaming support comes in Phase 2.
-    """
     pool = request.app.state.worker_pool
     if pool is None:
         raise HTTPException(status_code=503, detail="Worker pool not initialized")
@@ -154,14 +142,13 @@ async def chat_completions(
 
 @router.get("/v1/models")
 async def list_models(request: Request) -> dict:
-    """List all models available across registered workers."""
     registry = request.app.state.registry
     workers = registry.all_workers() if registry else []
     model_set: set[str] = set()
     for w in workers:
         model_set.update(w.supported_models)
     if not model_set:
-        model_set.add("llama3")  # Default assumption
+        model_set.add("llama3")
 
     return {
         "object": "list",
@@ -174,7 +161,6 @@ async def list_models(request: Request) -> dict:
 
 @router.get("/health")
 async def health(request: Request) -> dict:
-    """Basic liveness check — always returns 200 if server is up."""
     pool = request.app.state.worker_pool
     registry = request.app.state.registry
     healthy = (
@@ -189,7 +175,6 @@ async def health(request: Request) -> dict:
 
 @router.get("/v1/nodes")
 async def list_nodes(request: Request) -> dict:
-    """Helix-specific: show all registered workers and their status."""
     registry = request.app.state.registry
     if not registry:
         return {"workers": []}
