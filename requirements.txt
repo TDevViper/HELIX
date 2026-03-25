@@ -1,0 +1,41 @@
+# Web framework
+fastapi
+uvicorn[standard]
+httpx
+
+# Data validation
+pydantic
+pydantic-settings
+
+# Redis (async)
+redis[hiredis]
+
+# gRPC (KV coordinator Phase 3)
+grpcio
+grpcio-tools
+
+# Observability
+opentelemetry-api
+opentelemetry-sdk
+opentelemetry-exporter-otlp-proto-http
+opentelemetry-instrumentation-fastapi
+prometheus-client
+
+# Async utilities
+anyio
+asyncio-throttle
+
+# Testing
+pytest
+pytest-asyncio
+pytest-httpx
+locust
+
+# Linting + type checking (dev)
+ruff
+mypy
+
+# Utilities
+python-dotenv
+orjson
+structlog
