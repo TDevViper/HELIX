@@ -65,6 +65,5 @@ async def test_session_affinity_routes_consistently():
         m.startup = AsyncMock()
         pool._backends[wid] = m
 
-    req = HelixRequest(model="llama3", messages=[], session_id="sess-42")
     first = ring.get_node("sess-42")
     assert ring.get_node("sess-42") == first  # deterministic

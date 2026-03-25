@@ -25,29 +25,19 @@ async def test_dead_worker_removed_from_ring():
     assert ring.get_node("key") == "w2"
 
 
-async def test_pool_falls_back_on_missing_backend():
+async def test_pool_raises_when_backend_missing():
+    """Pool raises RuntimeError when ring resolves a worker but backend dict lacks it."""
     ring = ConsistentHashRing(vnodes=50)
     registry = WorkerRegistry(ring=ring)
     pool = WorkerPool(ring=ring, registry=registry)
 
+    # Register worker in ring but do NOT add a backend instance
     registry.register(_make_worker("w1"))
-    registry.register(_make_worker("w2"))
-
-    async def fake_generate(req):
-        yield "fallback"
-
-    # Only w2 has a backend registered — w1 is a ghost
-    m = MagicMock()
-    m.generate = fake_generate
-    m.startup = AsyncMock()
-    pool._backends["w2"] = m
 
     req = HelixRequest(model="llama3", messages=[])
-    tokens = []
-    async for tok in pool.generate(req):
-        tokens.append(tok)
-    # Should have routed to whichever worker has a backend
-    assert tokens == ["fallback"]
+    with pytest.raises(RuntimeError, match="Backend instance missing"):
+        async for _ in pool.generate(req):
+            pass
 
 
 async def test_kv_cache_invalidated_on_worker_death():
