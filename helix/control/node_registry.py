@@ -3,7 +3,6 @@ from __future__ import annotations
 import asyncio
 import logging
 import random
-import time
 from typing import Callable, Optional
 
 from helix.control.hash_ring import ConsistentHashRing
@@ -33,6 +32,7 @@ class WorkerRegistry:
         suspect_threshold: int = 3,
     ) -> None:
         self._ring = ring
+        self._backends: dict[str, object] = {}
         self._gossip_interval = gossip_interval_ms / 1000.0
         self._fan_out = gossip_fan_out
         self._suspect_threshold = suspect_threshold
@@ -204,14 +204,14 @@ class WorkerRegistry:
 
     # Maps worker_id -> LLMBackend instance for gossip pings
     # Populated by WorkerPool when backends are started
-    _backends: dict = {}  # class-level, shared
+    # _backends initialized as instance variable in __init__
 
     def register_backend(self, worker_id: str, backend: object) -> None:
         """Called by WorkerPool to give gossip access to health_check()."""
-        WorkerRegistry._backends[worker_id] = backend
+        self._backends[worker_id] = backend
 
     def deregister_backend(self, worker_id: str) -> None:
-        WorkerRegistry._backends.pop(worker_id, None)
+        self._backends.pop(worker_id, None)
 
     # ── Status summary ────────────────────────────────────────
 

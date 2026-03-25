@@ -11,7 +11,7 @@ from helix.data.mlx_backend import MLXBackend
 from helix.data.ollama_backend import OllamaBackend
 from helix.data.vllm_backend import VLLMBackend
 from helix.models.request import HelixRequest
-from helix.models.worker import BackendType, WorkerNode, WorkerStatus
+from helix.models.worker import BackendType, WorkerNode
 
 logger = logging.getLogger(__name__)
 

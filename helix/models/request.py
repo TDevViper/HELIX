@@ -4,7 +4,8 @@ import time
 import uuid
 from enum import Enum
 from typing import Any, Optional
-from pydantic import BaseModel, Field
+
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class Priority(int, Enum):
@@ -121,5 +122,4 @@ class HelixRequest(BaseModel):
         """Heap ordering: higher priority_score = smaller heap value."""
         return self.priority_score() > other.priority_score()
 
-    class Config:
-        use_enum_values = False
+    model_config = ConfigDict(populate_by_name=True)
