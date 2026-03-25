@@ -20,7 +20,7 @@ class TokenBucketRateLimiter:
         self._buckets: dict[str, Deque[float]] = defaultdict(deque)
 
     def is_allowed(self, client_id: str) -> bool:
-        from config import settings
+        from helix.config import settings
         if not settings.rate_limit_enabled:
             return True
 
@@ -39,7 +39,7 @@ _limiter = TokenBucketRateLimiter()
 
 
 async def rate_limit(request: Request) -> None:
-    from config import settings
+    from helix.config import settings
     if not settings.rate_limit_enabled:
         return
     client_id = request.headers.get("X-Client-ID", request.client.host if request.client else "unknown")

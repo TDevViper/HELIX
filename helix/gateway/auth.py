@@ -8,7 +8,7 @@ async def verify_api_key(request: Request) -> str:
     Middleware-style dependency. Returns client_id if auth passes.
     If auth_enabled=False in settings, always passes through.
     """
-    from config import settings
+    from helix.config import settings
 
     if not settings.auth_enabled:
         return request.headers.get("X-Client-ID", "anonymous")

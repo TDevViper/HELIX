@@ -10,7 +10,7 @@ def setup_tracing(service_name: str = "helix") -> None:
     Configure OpenTelemetry tracing. No-ops gracefully if otel_enabled=False
     or if the OTel packages are not installed.
     """
-    from config import settings
+    from helix.config import settings
 
     if not settings.otel_enabled:
         logger.info("OTel tracing disabled (HELIX_OTEL_ENABLED=false)")

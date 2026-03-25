@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 from typing import AsyncIterator, Optional
 
-from config import settings
+from helix.config import settings
 from helix.control.hash_ring import ConsistentHashRing
 from helix.control.node_registry import WorkerRegistry
 from helix.data.backend_abc import LLMBackend
