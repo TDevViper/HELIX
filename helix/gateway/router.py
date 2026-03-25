@@ -60,7 +60,7 @@ def _build_helix_request(
     )
 
     return HelixRequest(
-        session_id=body.session_id or None,
+        session_id=body.session_id or str(__import__("uuid").uuid4()),
         client_id=client_id,
         model=body.model,
         messages=messages,
