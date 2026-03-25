@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from unittest.mock import AsyncMock, MagicMock
 
+import pytest
+
 from helix.control.hash_ring import ConsistentHashRing
 from helix.control.node_registry import WorkerRegistry
 from helix.data.worker_pool import WorkerPool
@@ -41,8 +43,6 @@ async def test_pool_raises_when_backend_missing():
 
 
 async def test_kv_cache_invalidated_on_worker_death():
-    from unittest.mock import AsyncMock
-
     from helix.cache.prefix_cache import DistributedPrefixCache
     from helix.data.kv_coordinator import KVCacheCoordinator
 
